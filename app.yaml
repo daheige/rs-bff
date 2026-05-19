@@ -1,0 +1,12 @@
+app_debug: true # 是否开启调试模式，线上环境需要设置为false
+app_port: 8080 # bff 运行端口
+monitor_port: 8090 # metrics,trace监听端口
+log_level: "debug" # 日志级别设置，遵循log crates包的日志级别
+graceful_wait_time: 5 # 平滑退出时间，单位s
+services:
+  - name: user
+    target: http://127.0.0.1:50051
+  - name: order
+    target: http://127.0.0.1:50052
+
+# 其他配置可以继续添加
