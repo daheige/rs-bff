@@ -24,6 +24,9 @@ chrono = "0.4.44"
 
 thiserror = "2"
 
+# autometrics-rs 用于自动prometheus metrics服务可观测性
+autometrics = { version = "3.0.0", features = ["prometheus-exporter"] }
+
 # monitor
 monitor = {git = "https://github.com/rs-god/hera", tag = "v1.1.6"}
 shutdown = {git = "https://github.com/rs-god/hera", tag = "v1.1.6"}

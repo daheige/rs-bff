@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 // 定义路由 handler
-pub mod user;
-pub mod order;
+pub mod greeter;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Reply<T> {

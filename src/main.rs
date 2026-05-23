@@ -1,13 +1,10 @@
 use crate::interfaces::router::set_router;
-use crate::infra::config::{AppState, Config};
-use infra::grpc::GrpcClientManager;
+use crate::infra::config::Config;
 use chrono::Utc;
 use log::info;
 use std::io::Write;
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::time::Duration;
-use axum::Router;
 use monitor::metrics::prometheus_init;
 use shutdown::graceful_shutdown;
 use providers::provider::new_app_state;

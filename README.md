@@ -361,3 +361,15 @@ cargo run
 ```
 
 服务默认监听 `0.0.0.0:8080`，gRPC 后端地址通过 `app.yaml` 的 `services` 列表配置。
+
+## 八、可观测性
+metrics访问地址：http://localhost:8091/metrics
+效果如下：
+![metrics.png](metrics.png)
+
+## 客户端和服务端pb协议生成
+build.rs用于本地protos协议生成，当然你可以把pb协议进行托管，实现方式：https://github.com/daheige/hello-pb
+
+## axum使用参考
+- https://crates.io/crates/axum
+- https://github.com/daheige/rs-api

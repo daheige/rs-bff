@@ -1,6 +1,5 @@
 use crate::infra::errors::AppError;
 use serde::Deserialize;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -25,18 +24,12 @@ impl Config {
         Ok(config)
     }
 
-    pub fn service_map(&self) -> HashMap<&str, &str> {
-        self.services
-            .iter()
-            .map(|s| (s.name.as_str(), s.target.as_str()))
-            .collect()
-    }
-
     pub fn get_service_target(&self, name: &str) -> Result<String, AppError> {
-        self.services
+        let result = self.services
             .iter()
             .find(|s| s.name == name)
             .map(|s| s.target.clone())
-            .ok_or_else(|| AppError::Internal(format!("service '{}' not found in config", name)))
+            .ok_or_else(|| AppError::Internal(format!("service '{}' not found in config", name)));
+        result
     }
 }

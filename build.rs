@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 
+// 用于本地protos协议生成，当然你可以把pb协议进行托管，实现方式：https://github.com/daheige/hello-pb
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let proto_dir = "proto";
     let out_dir = "src/rust_grpc";

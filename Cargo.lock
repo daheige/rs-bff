@@ -1275,6 +1275,7 @@ name = "rs-bff"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "autometrics",
  "axum",
  "chrono",
  "env_logger",
