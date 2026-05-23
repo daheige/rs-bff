@@ -1,375 +1,185 @@
 # rs-bff
-rs-bff is used for pb protocol or json protocol serialization and deserialization, as well as calling background grpc microservice or go api service.
 
-# BFF 网关从零到一实现过程
+rs-bff 是一个基于 Rust 的 BFF（Backend for Frontend）应用网关，对外暴露 HTTP API，对内通过 gRPC 调用后端微服务，并完成 JSON 与 Protobuf 之间的协议转换。
 
-## 一、项目概述
+## 一、项目架构
 
-本项目是一个基于 Rust 的 BFF（Backend for Frontend）应用网关，核心职责是对外暴露 HTTP API，对内通过 gRPC 协议调用后端微服务，并完成 JSON 与 Protobuf 之间的协议转换。
+项目采用分层架构组织代码：
 
-## 二、技术选型与依赖配置
+```
+src/
+├── main.rs              # 入口：初始化配置、日志、路由、metrics、优雅退出
+├── rust_grpc/           # build.rs 自动生成的本地 proto 代码
+│   ├── mod.rs
+│   ├── user.rs
+│   └── order.rs
+├── infra/               # 基础设施层
+│   ├── mod.rs
+│   ├── config/          # 配置系统
+│   │   ├── mod.rs
+│   │   └── config.rs
+│   └── errors/          # 统一错误类型
+│       ├── mod.rs
+│       └── error.rs
+├── interfaces/          # 接口层（HTTP handler + 路由）
+│   ├── mod.rs
+│   ├── handler/         # HTTP handler 实现
+│   │   ├── mod.rs
+│   │   └── greeter.rs
+│   └── router/          # axum 路由定义
+│       ├── mod.rs
+│       └── api.rs
+└── providers/           # 提供者层（gRPC 客户端等外部服务连接）
+    ├── mod.rs
+    ├── provider.rs      # AppState 组装
+    └── grpc/
+        ├── mod.rs
+        ├── client.rs    # GrpcClientManager 实现
+        └── readme.md
+```
 
-用户指定的核心依赖如下，全部放入 `Cargo.toml`：
+### 核心分层职责
+
+- **infra**：配置解析、错误定义等基础能力，被上层依赖。
+- **providers**：管理外部连接（gRPC client、数据库等），向上暴露 `AppState`。
+- **interfaces**：处理 HTTP 请求，包含路由注册和 handler 实现，依赖 `AppState` 调用底层服务。
+
+## 二、技术栈
+
+| 用途 | 依赖 |
+|------|------|
+| HTTP Web 框架 | [axum](https://crates.io/crates/axum) 0.8.9 |
+| gRPC 客户端/运行时 | [tonic](https://crates.io/crates/tonic) 0.14.6 + tonic-prost 0.14.6 |
+| Protobuf 序列化 | [prost](https://crates.io/crates/prost) 0.14.3 |
+| 异步运行时 | [tokio](https://crates.io/crates/tokio) 1.52.1 |
+| 配置/JSON | serde + serde_json + serde_yaml |
+| 日志 | log + env_logger + chrono |
+| 错误处理 | [thiserror](https://crates.io/crates/thiserror) 2 |
+| 可观测性/Metrics | [autometrics](https://crates.io/crates/autometrics) 3.0.0 + [monitor](https://github.com/rs-god/hera) |
+| 优雅退出 | [shutdown](https://github.com/rs-god/hera) |
+| 外部 PB 协议托管 | [hello-pb](https://github.com/daheige/hello-pb) |
+
+## 三、配置系统
+
+通过 `app.yaml` 驱动：
+
+```yaml
+app_debug: true               # 调试模式（线上设为 false）
+app_port: 8080                # HTTP 服务端口
+monitor_port: 8091            # Prometheus metrics 端口
+log_level: info               # 日志级别
+graceful_wait_time: 5         # 优雅退出等待时间（秒）
+services:
+  - name: greeter-svc
+    target: http://127.0.0.1:50051
+  - name: user
+    target: http://127.0.0.1:50052
+```
+
+配置读取禁止默认值：找不到服务时直接报错退出，确保配置缺失能被及时发现。
+
+## 四、Protobuf 协议
+
+### 本地 proto（build.rs 生成）
+
+`build.rs` 自动扫描 `proto/` 目录，通过 `tonic-prost-build` 生成代码到 `src/rust_grpc/`，并自动创建 `mod.rs`：
+
+- 编译前清理旧文件，删除协议后不会残留旧模块
+- 自动按文件名排序并生成 `pub mod xxx;`
+
+当前本地 proto：
+- `proto/user.proto`
+- `proto/order.proto`
+
+### 外部 PB 协议托管（推荐）
+
+对于多服务共享的协议，推荐通过独立仓库 + git 依赖托管，避免各服务重复生成和版本不一致。
+
+本项目已接入 [hello-pb](https://github.com/daheige/hello-pb) 作为外部协议依赖：
 
 ```toml
-[dependencies]
-tonic = "0.14.6"
-prost = "0.14.3"
-tonic-prost = "0.14.6"
-tokio = { version = "1.52.1", features = ["full"] }
-async-trait = "0.1.89"
-axum = "0.8.9"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+hello-pb = { git = "https://github.com/daheige/hello-pb", tag = "v1.0.5" }
 ```
 
-在 tonic 0.14 生态中，`tonic-prost-build` 负责编译期 proto 代码生成（取代了老版本 `tonic-build` 的 prost 功能），`tonic-prost` 是运行时的 prost codec 实现。因此 `build-dependencies` 中配置：
+## 五、错误处理
 
-```toml
-[build-dependencies]
-tonic-prost-build = "0.14.6"
-```
-
-后续逐步引入的依赖：
-- `serde_yaml = "0.9.33"`：配置文件解析
-- `thiserror = "2"`：错误类型定义
-- `log = "0.4.29"`、`env_logger = "0.11.10"`、`chrono = "0.4.44"`：日志系统
-
-## 三、Protobuf 定义与构建脚本
-
-### 3.1 Proto 文件
-
-在 `proto/` 目录下定义两个示例服务：
-
-- `user.proto`：用户服务，包含 `GetUser`、`CreateUser`、`ListUsers` 三个 RPC 方法
-- `order.proto`：订单服务，包含 `GetOrder`、`CreateOrder`、`ListUserOrders` 三个 RPC 方法
-
-### 3.2 构建脚本（build.rs）演变
-
-`build.rs` 经历了多轮优化，最终形态如下：
+统一错误类型 `AppError`：
 
 ```rust
-use std::fs;
-use std::path::Path;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let proto_dir = "proto";
-    let out_dir = "src/rust_grpc";
-
-    // 1.生成pb代码之前，先删除原来的rs文件
-    let _ = fs::remove_dir_all(out_dir);
-    fs::create_dir_all(out_dir)?;
-
-    // 2.读取proto文件
-    let mut proto_files = Vec::new();
-    for entry in fs::read_dir(proto_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.extension().and_then(|s| s.to_str()) == Some("proto") {
-            proto_files.push(path.to_string_lossy().into_owned());
-        }
-    }
-    proto_files.sort();
-
-    // 3.生成pb代码，这里指定了pb代码输出目录位置
-    tonic_prost_build::configure()
-        .build_server(true)
-        .build_client(true)
-        .out_dir(out_dir)
-        .compile_protos(&proto_files, &[proto_dir.to_string()])?;
-
-    // 生成mod.rs文件
-    let mut mods = String::new();
-    for proto in &proto_files {
-        let name = Path::new(proto)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .ok_or("invalid proto file name")?;
-        mods.push_str(&format!("pub mod {};\n", name));
-    }
-
-    // 4.将模块列表写入mod.rs中
-    fs::write(format!("{}/mod.rs", out_dir), mods)?;
-
-    Ok(())
-}
-```
-
-关键演进点：
-- **输出目录固定**：`.out_dir("src/rust_grpc")`，生成的 `.rs` 文件直接落盘到源码目录
-- **自动扫描**：不再硬编码 `proto_files` 数组，而是遍历 `proto/` 目录自动收集
-- **自动清旧**：编译前先 `remove_dir_all` 再 `create_dir_all`，确保删除协议后不会残留旧模块
-- **自动生成 mod.rs**：根据扫描结果动态写入 `pub mod user;`、`pub mod order;`
-- **协议生成**: https://github.com/daheige/hello-pb
-
-### 3.3 模块注册
-
-`src/lib.rs` 直接暴露 `rust_grpc` 模块：
-
-```rust
-pub mod rust_grpc;
-```
-
-`src/rust_grpc/mod.rs` 由 `build.rs` 自动生成，内容为：
-
-```rust
-pub mod order;
-pub mod user;
-```
-
-这样业务代码可以通过 `crate::rust_grpc::user::UserServiceClient` 直接访问生成的 client，无需 `tonic::include_proto!`。
-
-## 四、核心模块实现
-
-### 4.1 错误处理（src/error.rs）
-
-定义统一的 `AppError`，覆盖 gRPC 调用、传输、序列化三类错误：
-
-```rust
-#[derive(thiserror::Error, Debug)]
 pub enum AppError {
-    #[error("grpc error: {0}")]
-    Grpc(#[from] tonic::Status),
-    #[error("grpc transport error: {0}")]
-    GrpcTransport(#[from] tonic::transport::Error),
-    #[error("serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
-    #[error("internal error: {0}")]
+    Grpc(tonic::Status),
+    GrpcTransport(tonic::transport::Error),
+    Serialization(serde_json::Error),
     Internal(String),
 }
 ```
 
-为 `AppError` 实现 `axum::response::IntoResponse`，将 `tonic::Code` 映射为对应的 HTTP 状态码：
-- `NotFound` → 404
-- `InvalidArgument` → 400
-- `Unauthenticated` → 401
-- `PermissionDenied` → 403
-- `AlreadyExists` → 409
-- `Unavailable` → 503
-- `DeadlineExceeded` → 504
-- 其余 → 500
+已实现 `axum::response::IntoResponse`，自动映射 HTTP 状态码：
 
-响应体统一为 JSON 格式：`{"error": "...", "code": 500}`。
+| gRPC Code | HTTP Status |
+|-----------|-------------|
+| NotFound | 404 |
+| InvalidArgument | 400 |
+| Unauthenticated | 401 |
+| PermissionDenied | 403 |
+| AlreadyExists | 409 |
+| Unavailable | 503 |
+| DeadlineExceeded | 504 |
+| 其他 | 500 |
 
-### 4.2 gRPC 客户端管理（src/grpc/）
+## 六、HTTP API
 
-模块组织采用 **实现分离 + `pub use` 重新导出** 的规范：
+当前暴露的路由：
 
 ```
-src/grpc/
-  mod.rs       // mod client; pub use client::GrpcClientManager;
-  client.rs    // 实际实现
+GET  /                  -> hello,bff
+GET  /api/v1/greeter/say/{name}  -> 调用 greeter gRPC 服务
 ```
 
-`GrpcClientManager` 持有 `UserServiceClient` 和 `OrderServiceClient`，通过 `tonic::transport::Channel` 建立连接：
+未匹配路由会返回统一的 JSON 错误：
 
-```rust
-#[derive(Clone)]
-pub struct GrpcClientManager {
-    user_client: UserServiceClient<Channel>,
-    order_client: OrderServiceClient<Channel>,
-}
-
-impl GrpcClientManager {
-    pub async fn new(user_addr: &str, order_addr: &str) -> Result<Self, AppError> {
-        let user_channel = Channel::from_shared(user_addr.to_string())
-            .map_err(|e| AppError::Internal(format!("invalid user service uri: {}", e)))?
-            .connect()
-            .await?;
-        // ...
-    }
-
-    pub fn user_client(&self) -> UserServiceClient<Channel> { self.user_client.clone() }
-    pub fn order_client(&self) -> OrderServiceClient<Channel> { self.order_client.clone() }
+```json
+{
+  "code": 404,
+  "message": "api not found",
+  "data": {}
 }
 ```
 
-### 4.3 HTTP API 层（src/api/）
+## 七、可观测性
 
-同样采用 **实现分离 + `pub use` 重新导出**：
+基于 `autometrics` + `monitor` 自动暴露 Prometheus 指标：
 
-```
-src/api/
-  mod.rs       // mod api; pub use api::{AppState, router};
-  api.rs       // 实际实现
-```
+- 访问地址：`http://localhost:8091/metrics`
+- 每个 HTTP handler 通过 `#[autometrics(objective = API_SLO)]` 自动采集请求延迟、成功率等指标
 
-`api.rs` 的核心职责：
+效果预览：
 
-1. **定义 DTO**：对外暴露的 JSON 结构体（如 `User`、`Order`、`CreateUserReq` 等）
-2. **协议转换**：为 DTO 实现 `From<crate::rust_grpc::xxx::Xxx>`，将 Protobuf 响应转为 JSON
-3. **定义路由**：使用 `axum::Router` 挂载 handler
-4. **Handler 实现**：接收 JSON 请求 → 构造 Protobuf 请求 → 调用 gRPC → 转换响应 → 返回 JSON
-
-暴露的 HTTP API：
-- `GET/POST /api/users`
-- `GET /api/users/{id}`
-- `POST /api/orders`
-- `GET /api/orders/{id}`
-- `GET /api/users/{id}/orders`
-
-### 4.4 配置系统（src/config.rs）
-
-从硬编码环境变量演进为 YAML 配置文件驱动。
-
-`app.yaml` 结构：
-
-```yaml
-app_debug: true
-app_port: 8080
-monitor_port: 8090
-log_level: "debug"
-
-services:
-  - name: user
-    target: http://127.0.0.1:50051
-  - name: order
-    target: http://127.0.0.1:50052
-```
-
-`Config` 结构体：
-
-```rust
-#[derive(Debug, Clone, Deserialize)]
-pub struct Config {
-    pub app_debug: bool,
-    pub app_port: u16,
-    pub monitor_port: u16,
-    pub log_level: String,
-    pub services: Vec<ServiceConfig>,
-}
-```
-
-提供两个核心方法：
-- `from_yaml(path: &str)`：读取并反序列化 YAML
-- `get_service_target(name: &str) -> Result<String, AppError>`：按名称查找服务地址，找不到直接返回错误，**禁止设置默认值**
-
-### 4.5 入口（src/main.rs）
-
-最终形态：
-
-```rust
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = Config::from_yaml("app.yaml")?;
-
-    // 基于配置动态设置日志级别
-    env_logger::Builder::new()
-        .target(env_logger::Target::Stdout)
-        .parse_filters(&config.log_level)
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "[{} {} {}:{}] {}",
-                Utc::now().format("%Y-%m-%dT%H:%M:%SZ"),
-                record.level(),
-                record.module_path().unwrap_or("unnamed"),
-                record.line().unwrap_or(0),
-                &record.args()
-            )
-        })
-        .init();
-
-    let user_service_addr = config.get_service_target("user")?;
-    let order_service_addr = config.get_service_target("order")?;
-
-    let grpc_manager = GrpcClientManager::new(&user_service_addr, &order_service_addr).await?;
-    let state = AppState {
-        grpc_manager: Arc::new(grpc_manager),
-    };
-
-    let app = router(state);
-
-    let bind_addr = format!("0.0.0.0:{}", config.app_port);
-    let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
-    info!("BFF gateway listening on {}", listener.local_addr()?);
-
-    axum::serve(listener, app).await?;
-    Ok(())
-}
-```
-
-## 五、关键设计决策与演进
-
-### 5.1 Proto 代码生成方式
-
-最初使用 `tonic::include_proto!("user")` 在 `lib.rs` 中内联包含生成的代码。这种方式的问题是无法直观地查看和调试生成的代码。
-
-演进为：
-- `build.rs` 通过 `.out_dir("src/rust_grpc")` 将 `.rs` 文件直接生成到源码树
-- `src/rust_grpc/mod.rs` 由 `build.rs` 根据 proto 文件动态生成 `mod` 声明
-- `lib.rs` 中只需 `pub mod rust_grpc;`
-
-### 5.2 模块导出规范
-
-为避免 `bff::api::api::AppState` 这种重复嵌套，所有包含子模块的目录统一采用：
-
-```rust
-// src/<module>/mod.rs
-mod <impl_file>;
-pub use <impl_file>::{Type, function};
-```
-
-外部调用者始终通过 `bff::api::AppState`、`bff::grpc::GrpcClientManager` 访问，路径扁平清晰。
-
-### 5.3 配置系统演进
-
-- **阶段 1**：`std::env::var` 读取环境变量，带硬编码默认值
-- **阶段 2**：引入 `serde_yaml`，从 `app.yaml` 读取
-- **阶段 3**：`get_service_target` 返回 `Result`，找不到服务时直接报错退出，**禁止默认值**，确保配置缺失能被及时发现
-
-### 5.4 日志系统演进
-
-- **阶段 1**：`tracing` + `tracing-subscriber`（`EnvFilter` + `fmt::layer`）
-- **阶段 2**：替换为 `log` + `env_logger` + `chrono`，原因：项目当前不需要 tracing 的 span、instrument 等高级特性，`log` 生态更轻量
-
-`trace.md` 中保留了完整的 tracing 用法参考，方便后续需要时恢复。
-
-## 六、最终目录结构
-
-```
-bff/
-├── Cargo.toml
-├── build.rs
-├── app.yaml
-├── trace.md
-├── self-code.md
-├── proto/
-│   ├── user.proto
-│   └── order.proto
-└── src/
-    ├── main.rs
-    ├── lib.rs
-    ├── config.rs
-    ├── error.rs
-    ├── grpc/
-    │   ├── mod.rs
-    │   └── client.rs
-    ├── api/
-    │   ├── mod.rs
-    │   └── api.rs
-    └── rust_grpc/
-        ├── mod.rs          # build.rs 自动生成
-        ├── user.rs         # build.rs 生成
-        └── order.rs        # build.rs 生成
-```
-
-## 七、运行方式
-
-```bash
-cargo run
-```
-
-服务默认监听 `0.0.0.0:8080`，gRPC 后端地址通过 `app.yaml` 的 `services` 列表配置。
-
-## 八、可观测性
-metrics访问地址：http://localhost:8091/metrics
-效果如下：
 ![metrics.png](metrics.png)
 
-## 客户端和服务端pb协议生成
-build.rs用于本地protos协议生成，当然你可以把pb协议进行托管，实现方式：https://github.com/daheige/hello-pb
+## 八、运行方式
 
-## axum使用参考
-- https://crates.io/crates/axum
-- https://github.com/daheige/rs-api
+```bash
+# 开发运行
+cargo run
+
+# 确保 app.yaml 中配置的 gRPC 后端服务已启动
+```
+
+服务默认监听 `0.0.0.0:8080`，metrics 监听 `8091`。
+
+## 九、关键演进记录
+
+1. **架构分层**：从扁平结构演进为 `infra / providers / interfaces` 分层，职责更清晰。
+2. **PB 协议托管**：从本地 `build.rs` 生成所有协议，演进为本地 proto + 外部 `hello-pb` git 依赖混合模式。
+3. **可观测性**：引入 `autometrics` 自动埋点 + Prometheus exporter，替代手动指标采集。
+4. **优雅退出**：引入 `shutdown` 组件，支持 `SIGTERM/SIGINT` 信号平滑关闭 HTTP 和 metrics 服务。
+5. **日志系统**：从 `tracing` 演进为 `log + env_logger + chrono`，当前场景更轻量（`trace.md` 保留了 tracing 用法参考）。
+6. **配置系统**：从硬编码环境变量演进为 YAML 配置驱动，禁止默认值，缺失即报错。
+
+## 组件库
+
+- [axum](https://crates.io/crates/axum)
+- [rs-api](https://github.com/daheige/rs-api)
+- [hello-pb](https://github.com/daheige/hello-pb)
+- [hera (monitor/shutdown)](https://github.com/rs-god/hera)
