@@ -46,18 +46,18 @@ src/
 
 ## 二、技术栈
 
-| 用途 | 依赖 |
-|------|------|
-| HTTP Web 框架 | [axum](https://crates.io/crates/axum) 0.8.9 |
-| gRPC 客户端/运行时 | [tonic](https://crates.io/crates/tonic) 0.14.6 + tonic-prost 0.14.6 |
-| Protobuf 序列化 | [prost](https://crates.io/crates/prost) 0.14.3 |
-| 异步运行时 | [tokio](https://crates.io/crates/tokio) 1.52.1 |
-| 配置/JSON | serde + serde_json + serde_yaml |
-| 日志 | log + env_logger + chrono |
-| 错误处理 | [thiserror](https://crates.io/crates/thiserror) 2 |
+| 用途 | 依赖                                                                                                    |
+|------|-------------------------------------------------------------------------------------------------------|
+| HTTP Web 框架 | [axum](https://crates.io/crates/axum) 0.8.9                                                           |
+| gRPC 客户端/运行时 | [tonic](https://crates.io/crates/tonic) 0.14.6 + tonic-prost 0.14.6                                   |
+| Protobuf 序列化 | [prost](https://crates.io/crates/prost) 0.14.3                                                        |
+| 异步运行时 | [tokio](https://crates.io/crates/tokio) 1.52.3                                                        |
+| 配置/JSON | serde + serde_json + serde_yaml                                                                       |
+| 日志 | log + env_logger + chrono                                                                             |
+| 错误处理 | [thiserror](https://crates.io/crates/thiserror) 2                                                     |
 | 可观测性/Metrics | [autometrics](https://crates.io/crates/autometrics) 3.0.0 + [monitor](https://github.com/rs-god/hera) |
-| 优雅退出 | [shutdown](https://github.com/rs-god/hera) |
-| 外部 PB 协议托管 | [hello-pb](https://github.com/daheige/hello-pb) |
+| 优雅退出 | [shutdown](https://github.com/rs-god/hera)                                                            |
+| 外部 PB 协议托管 | [hello-pb](https://github.com/daheige/hello-pb)                                                       |
 
 ## 三、配置系统
 
