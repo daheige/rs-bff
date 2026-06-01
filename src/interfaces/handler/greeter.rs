@@ -2,6 +2,7 @@ use axum::extract::{Path, State};
 use hello_pb::hello::HelloReq;
 use log::info;
 use crate::infra::config::AppState;
+use crate::infra::errors::AppError;
 use tonic::Request;
 use autometrics::autometrics;
 use monitor::metrics::API_SLO;
@@ -11,19 +12,19 @@ use monitor::metrics::API_SLO;
 #[autometrics(objective = API_SLO)]
 // 也可以使用下面的方式，简单处理
 // #[autometrics]
-pub async fn get_user(State(state): State<AppState>,Path(name): Path<String>) -> String {
+pub async fn get_user(State(state): State<AppState>, Path(name): Path<String>) -> Result<String, AppError> {
     info!("request name: {}", name);
     // 调用rpc请求
-    let mut client = state.grpc_manager.greeter_client();
+    let mut client = state.grpc_manager.greeter_client().await?;
     let result = client.say_hello(Request::new(HelloReq { name })).await;
     match result {
         Ok(resp) => {
             let reply = resp.into_inner();
-            reply.message
+            Ok(reply.message)
         }
         Err(err) => {
             info!("request error: {}", err);
-           "request error".to_string()
+            Ok("request error".to_string())
         }
     }
 }

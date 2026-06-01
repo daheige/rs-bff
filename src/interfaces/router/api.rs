@@ -6,6 +6,7 @@ use axum::response::IntoResponse;
 use axum::{routing::get, Json, Router};
 
 pub fn set_greeter_router(state: AppState) -> Router {
+    // http://127.0.0.1:8080/api/v1/greeter/say/heige
     let router = Router::new()
         .route("/say/{name}",get(greeter::get_user))
         .with_state(state);
@@ -15,7 +16,7 @@ pub fn set_greeter_router(state: AppState) -> Router {
 pub fn set_router(state: AppState) -> Router {
     let api_routes = Router::new()
         .route("/",get(home))
-        .nest("/greeter", set_greeter_router(state.clone()))
+        .nest("/greeter", set_greeter_router(state))
         .fallback(api_not_found); // set api group and not found handler for api/xxx
 
     let router = Router::new()

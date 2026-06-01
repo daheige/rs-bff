@@ -9,7 +9,7 @@ pub async fn new_app_state(config: &Config) ->Result<AppState, Box<dyn std::erro
     let s = TargetServices{
         greeter_addr,
     };
-    let grpc_manager = GrpcClientManager::new(s).await?;
+    let grpc_manager = GrpcClientManager::new(s);
     let state = AppState {
         grpc_manager: Arc::new(grpc_manager),
     };
