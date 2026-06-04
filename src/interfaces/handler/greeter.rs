@@ -18,7 +18,7 @@ pub async fn get_user(
 ) -> Result<String, AppError> {
     info!("request name: {}", name);
     // 调用rpc请求
-    let mut client = state.grpc_manager.greeter_client();
+    let mut client = state.grpc_manager.greeter_client().await?;
     let result = client.say_hello(Request::new(HelloReq { name })).await;
     match result {
         Ok(resp) => {
