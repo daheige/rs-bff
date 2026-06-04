@@ -1,19 +1,19 @@
-use crate::interfaces::router::set_router;
 use crate::infra::config::Config;
+use crate::interfaces::router::set_router;
 use chrono::Utc;
 use log::info;
+use monitor::metrics::prometheus_init;
+use providers::provider::new_app_state;
+use shutdown::graceful_shutdown;
 use std::io::Write;
 use std::net::SocketAddr;
 use std::time::Duration;
-use monitor::metrics::prometheus_init;
-use shutdown::graceful_shutdown;
-use providers::provider::new_app_state;
 
 // 定义模块
-mod interfaces;
 mod infra;
-mod rust_grpc;
+mod interfaces;
 mod providers;
+mod rust_grpc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,7 +57,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let http_handler = tokio::spawn(async move {
         // Run the server with graceful shutdown
         axum::serve(listener, http_router)
-            .with_graceful_shutdown(graceful_shutdown(Duration::from_secs(config.graceful_wait_time)))
+            .with_graceful_shutdown(graceful_shutdown(Duration::from_secs(
+                config.graceful_wait_time,
+            )))
             .await
             .expect("failed to start http service");
     });

@@ -1,5 +1,5 @@
-mod config;
 mod app;
+mod config;
 
-pub use config::Config;
 pub use app::AppState;
+pub use config::Config;

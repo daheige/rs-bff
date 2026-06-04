@@ -1,2 +1,2 @@
-pub mod provider;
 pub mod grpc;
+pub mod provider;

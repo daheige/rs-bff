@@ -1,3 +1,3 @@
 mod client;
 
-pub use client::{GrpcClientManager,TargetServices};
+pub use client::{GrpcClientManager, TargetServices};

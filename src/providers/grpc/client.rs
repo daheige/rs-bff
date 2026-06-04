@@ -1,45 +1,32 @@
-use crate::infra::errors::AppError;
 use hello_pb::hello::greeter_client::GreeterClient;
-use tokio::sync::OnceCell;
-use tonic::transport::Channel;
+use std::time::Duration;
+use tonic::transport::{Channel, Endpoint};
 
-#[derive(Clone)]
 pub struct TargetServices {
     pub greeter_addr: String,
 }
 
 pub struct GrpcClientManager {
-    target: TargetServices,
-    greeter_client: OnceCell<GreeterClient<Channel>>,
+    greeter_client: GreeterClient<Channel>,
 }
 
-pub async fn init_greeter_client(greeter_addr: &str) -> Result<GreeterClient<Channel>, AppError> {
-    let channel = Channel::from_shared(greeter_addr.to_string())
-        .map_err(|e| AppError::Internal(format!("invalid hello service uri: {}", e)))?
-        .timeout(std::time::Duration::from_secs(5))
-        .connect()
-        .await
-        .map_err(AppError::GrpcTransport)?;
-
-    Ok(GreeterClient::new(channel))
+pub fn init_channel(addr: &str) -> Channel {
+    let channel = Endpoint::from_shared(addr.to_string())
+        .expect(format!("failed to create endpoint: {}", addr).as_str())
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .keep_alive_while_idle(true)
+        .connect_lazy();
+    channel
 }
 
 impl GrpcClientManager {
     pub fn new(target: TargetServices) -> Self {
-        Self {
-            target,
-            greeter_client: OnceCell::const_new(),
-        }
+        let greeter_client = GreeterClient::new(init_channel(&target.greeter_addr));
+        Self { greeter_client }
     }
 
-    // 获取grpc client客户端（首次使用时连接，失败可重试）
-    pub async fn greeter_client(&self) -> Result<GreeterClient<Channel>, AppError> {
-        self.greeter_client
-            .get_or_try_init(|| async {
-                // println!("first init client");
-                init_greeter_client(&self.target.greeter_addr).await
-            })
-            .await
-            .map(|c| c.clone())
+    pub fn greeter_client(&self) -> GreeterClient<Channel> {
+        self.greeter_client.clone()
     }
 }

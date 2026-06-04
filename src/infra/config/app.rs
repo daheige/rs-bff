@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use crate::providers::grpc::GrpcClientManager;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {

@@ -25,7 +25,8 @@ impl Config {
     }
 
     pub fn get_service_target(&self, name: &str) -> Result<String, AppError> {
-        let result = self.services
+        let result = self
+            .services
             .iter()
             .find(|s| s.name == name)
             .map(|s| s.target.clone())
