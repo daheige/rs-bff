@@ -15,7 +15,7 @@ pub struct GrpcClientManager {
     greeter_client: OnceCell<GreeterClient<Channel>>,
 }
 
-// 创建一个基于hyper和tower服务的http2 grpc客户端
+// 创建一个基于hyper和tower服务的http2 gRPC 客户端通道
 // 这个通道 Channel 类型开销较低，因为它多路服用，减少了Clone实现，它由tower_buffer::Buffer提供支持。
 // 该缓冲区在后台任务中运行连接，并且提供了mpsc通道接口，相比 connect 直连方式，
 // Channel 能精确设置 TLS、超时、并发限制、用户代理、拦截器（Interceptors）、负载均衡策略等。
@@ -46,17 +46,13 @@ impl GrpcClientManager {
         }
     }
 
-    // 初始化greeter client
-    async fn init_greeter_client(&self) -> Result<GreeterClient<Channel>, AppError> {
-        let channel = init_channel(&self.target.greeter_addr).await?;
-        Ok(GreeterClient::new(channel))
-    }
-
     pub async fn greeter_client(&self) -> Result<GreeterClient<Channel>, AppError> {
+        // 如果没有建立 gRPC client，就执行一次初始化
         self.greeter_client
             .get_or_try_init(|| async {
-                // 如果没有建立 gRPC client，就执行一次
-                self.init_greeter_client().await
+                // 初始化greeter client
+                let channel = init_channel(&self.target.greeter_addr).await?;
+                Ok(GreeterClient::new(channel))
             })
             .await
             .map(|c| c.clone())
