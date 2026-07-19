@@ -1,6 +1,7 @@
 # rs-bff
 
-rs-bff 是一个基于 Rust 的 BFF（Backend for Frontend）应用网关，对外暴露 HTTP API，对内通过 gRPC 调用后端微服务，并完成 JSON 与 Protobuf 之间的协议转换。
+rs-bff 是一个基于 Rust 的 BFF（Backend for Frontend）应用网关，对外暴露 HTTP API，对内通过 gRPC 调用后端微服务，并完成 JSON 与
+Protobuf 之间的协议转换。
 
 ## 一、项目架构
 
@@ -47,18 +48,18 @@ src/
 
 ## 二、技术栈
 
-| 用途 | 依赖                                                                                                    |
-|------|-------------------------------------------------------------------------------------------------------|
-| HTTP Web 框架 | [axum](https://crates.io/crates/axum) 0.8.9                                                           |
+| 用途           | 依赖                                                                                                    |
+|--------------|-------------------------------------------------------------------------------------------------------|
+| HTTP Web 框架  | [axum](https://crates.io/crates/axum) 0.8.9                                                           |
 | gRPC 客户端/运行时 | [tonic](https://crates.io/crates/tonic) 0.14.6 + tonic-prost 0.14.6                                   |
 | Protobuf 序列化 | [prost](https://crates.io/crates/prost) 0.14.3                                                        |
-| 异步运行时 | [tokio](https://crates.io/crates/tokio) 1.52.3                                                        |
-| 配置/JSON | serde + serde_json + serde_yaml                                                                       |
-| 日志 | log + env_logger + chrono                                                                             |
-| 错误处理 | [thiserror](https://crates.io/crates/thiserror) 2                                                     |
+| 异步运行时        | [tokio](https://crates.io/crates/tokio) 1.52.3                                                        |
+| 配置/JSON      | serde + serde_json + serde_yaml                                                                       |
+| 日志           | log + env_logger + chrono                                                                             |
+| 错误处理         | [thiserror](https://crates.io/crates/thiserror) 2                                                     |
 | 可观测性/Metrics | [autometrics](https://crates.io/crates/autometrics) 3.0.0 + [monitor](https://github.com/rs-god/hera) |
-| 优雅退出 | [shutdown](https://github.com/rs-god/hera)                                                            |
-| 外部 PB 协议托管 | [hello-pb](https://github.com/daheige/hello-pb)                                                       |
+| 优雅退出         | [shutdown](https://github.com/rs-god/hera)                                                            |
+| 外部 PB 协议托管   | [hello-pb](https://github.com/daheige/hello-pb)                                                       |
 
 ## 三、配置系统
 
@@ -89,6 +90,7 @@ services:
 - 自动按文件名排序并生成 `pub mod xxx;`
 
 当前本地 proto：
+
 - `proto/user.proto`
 - `proto/order.proto`
 
@@ -99,7 +101,7 @@ services:
 本项目已接入 [hello-pb](https://github.com/daheige/hello-pb) 作为外部协议依赖：
 
 ```toml
-hello-pb = { git = "https://github.com/daheige/hello-pb", tag = "v1.0.5" }
+hello-pb = { git = "https://github.com/daheige/hello-pb", tag = "v1.1.1" }
 ```
 
 ## 五、gRPC 客户端
@@ -115,38 +117,40 @@ pub struct GrpcClientManager {
 
 连接参数配置：
 
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| `http2_keep_alive_interval` | 30s | HTTP/2 心跳间隔 |
-| `keep_alive_timeout` | 20s | 心跳超时（内网建议 10s，公网建议 20s） |
-| `keep_alive_while_idle` | true | 保持空闲连接 |
-| `timeout` | 30s | 单次 RPC 超时 |
-| `connect_timeout` | 10s | 连接建立超时 |
+| 参数                          | 值    | 说明                      |
+|-----------------------------|------|-------------------------|
+| `http2_keep_alive_interval` | 30s  | HTTP/2 心跳间隔             |
+| `keep_alive_timeout`        | 20s  | 心跳超时（内网建议 10s，公网建议 20s） |
+| `keep_alive_while_idle`     | true | 保持空闲连接                  |
+| `timeout`                   | 30s  | 单次 RPC 超时               |
+| `connect_timeout`           | 10s  | 连接建立超时                  |
 
 ### 设计与权衡
 
 1. **Channel 而非直连**
-   - tonic 的 `Endpoint::connect()` 返回 `Channel`，其内部基于 `tower_buffer::Buffer` 在后台任务中维护连接，天然支持 HTTP/2 多路复用。
-   - `Channel` 的 `Clone` 成本极低（内部为 `Arc`），因此 handler 中每次取到的 `GreeterClient` 都是独立克隆实例，线程安全且无锁竞争。
-   - 相比 `connect` 直连，`Channel` 能精确配置 TLS、超时、并发限制、拦截器、负载均衡策略，扩展性更好。
+    - tonic 的 `Endpoint::connect()` 返回 `Channel`，其内部基于 `tower_buffer::Buffer` 在后台任务中维护连接，天然支持
+      HTTP/2 多路复用。
+    - `Channel` 的 `Clone` 成本极低（内部为 `Arc`），因此 handler 中每次取到的 `GreeterClient` 都是独立克隆实例，线程安全且无锁竞争。
+    - 相比 `connect` 直连，`Channel` 能精确配置 TLS、超时、并发限制、拦截器、负载均衡策略，扩展性更好。
 
 2. **懒加载（`OnceCell`）而非启动时全量连接**
-   - 使用 `tokio::sync::OnceCell` 保证并发安全且仅初始化一次。
-   - **收益**：降低启动耗时；避免后端服务未就绪导致 BFF 启动失败；减少长期闲置的无用连接。
-   - **代价**：首次请求需承担一次 TCP/TLS 握手 RTT（冷启动）；连接问题会推迟到首次调用时才暴露。
+    - 使用 `tokio::sync::OnceCell` 保证并发安全且仅初始化一次。
+    - **收益**：降低启动耗时；避免后端服务未就绪导致 BFF 启动失败；减少长期闲置的无用连接。
+    - **代价**：首次请求需承担一次 TCP/TLS 握手 RTT（冷启动）；连接问题会推迟到首次调用时才暴露。
 
 3. **连接保活与超时策略**
-   - `keep_alive_while_idle(true)` 配合 30s 心跳 + 20s 超时，维持长连接以减少重复握手开销。
-   - `timeout(30s)` 限制单次 RPC，防止后端雪崩级联阻塞；`connect_timeout(10s)` 避免 hung 连接拖死资源。
-   - **权衡**：超时阈值需与后端实际 P99 对齐，过短会误杀慢请求，过长则失去熔断意义。
+    - `keep_alive_while_idle(true)` 配合 30s 心跳 + 20s 超时，维持长连接以减少重复握手开销。
+    - `timeout(30s)` 限制单次 RPC，防止后端雪崩级联阻塞；`connect_timeout(10s)` 避免 hung 连接拖死资源。
+    - **权衡**：超时阈值需与后端实际 P99 对齐，过短会误杀慢请求，过长则失去熔断意义。
 
 4. **错误分层映射**
-   - URI 无效 → `AppError::Internal`（配置错误，返回 HTTP 500）。
-   - 网络/连接失败 → `AppError::GrpcTransport`（上游不可用，返回 HTTP 502）。
-   - 与 `axum::response::IntoResponse` 联动，自动转换为对应 HTTP 状态码，无需 handler 额外处理。
+    - URI 无效 → `AppError::Internal`（配置错误，返回 HTTP 500）。
+    - 网络/连接失败 → `AppError::GrpcTransport`（上游不可用，返回 HTTP 502）。
+    - 与 `axum::response::IntoResponse` 联动，自动转换为对应 HTTP 状态码，无需 handler 额外处理。
 
 5. **扩展预留**
-   - `TargetServices` 和 `GrpcClientManager` 采用显式字段扩展：新增微服务时，只需在 `TargetServices` 中增加地址字段、在 `GrpcClientManager` 中增加对应的 `OnceCell` 字段即可，无需重构整体结构。
+    - `TargetServices` 和 `GrpcClientManager` 采用显式字段扩展：新增微服务时，只需在 `TargetServices` 中增加地址字段、在
+      `GrpcClientManager` 中增加对应的 `OnceCell` 字段即可，无需重构整体结构。
 
 ## 六、错误处理
 
@@ -163,16 +167,16 @@ pub enum AppError {
 
 已实现 `axum::response::IntoResponse`，自动映射 HTTP 状态码：
 
-| gRPC Code | HTTP Status |
-|-----------|-------------|
-| NotFound | 404 |
-| InvalidArgument | 400 |
-| Unauthenticated | 401 |
-| PermissionDenied | 403 |
-| AlreadyExists | 409 |
-| Unavailable | 503 |
-| DeadlineExceeded | 504 |
-| 其他 | 500 |
+| gRPC Code        | HTTP Status |
+|------------------|-------------|
+| NotFound         | 404         |
+| InvalidArgument  | 400         |
+| Unauthenticated  | 401         |
+| PermissionDenied | 403         |
+| AlreadyExists    | 409         |
+| Unavailable      | 503         |
+| DeadlineExceeded | 504         |
+| 其他               | 500         |
 
 ## 七、HTTP API
 
