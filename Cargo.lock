@@ -78,9 +78,9 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "async-trait"
-version = "0.1.91"
+version = "0.1.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae36dc4177970ef04fde5178d3e2429882def40e57a451f919c098f72baa6cec"
+checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -775,12 +775,14 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
 name = "logger"
-version = "1.1.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.1.6#cb45c5d245cc9824205bf2942c397ef4385e3ad1"
+version = "1.2.4"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
 dependencies = [
  "chrono",
  "env_logger",
  "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -816,7 +818,7 @@ dependencies = [
  "metrics",
  "metrics-util",
  "quanta",
- "thiserror 2.0.19",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -855,8 +857,8 @@ dependencies = [
 
 [[package]]
 name = "monitor"
-version = "1.1.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.1.6#cb45c5d245cc9824205bf2942c397ef4385e3ad1"
+version = "1.2.4"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
 dependencies = [
  "autometrics",
  "axum",
@@ -905,7 +907,7 @@ dependencies = [
  "futures-sink",
  "js-sys",
  "pin-project-lite",
- "thiserror 2.0.19",
+ "thiserror 2.0.20",
  "tracing",
 ]
 
@@ -919,7 +921,7 @@ dependencies = [
  "futures-executor",
  "futures-util",
  "opentelemetry",
- "thiserror 2.0.19",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -1042,7 +1044,7 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot",
- "thiserror 2.0.19",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -1273,7 +1275,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "rs-bff"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "async-trait",
  "autometrics",
@@ -1288,7 +1290,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "shutdown",
- "thiserror 2.0.19",
+ "thiserror 2.0.20",
  "tokio",
  "tonic",
  "tonic-prost",
@@ -1364,9 +1366,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.150"
+version = "1.0.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
+checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
 dependencies = [
  "itoa",
  "memchr",
@@ -1419,8 +1421,8 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "shutdown"
-version = "1.1.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.1.6#cb45c5d245cc9824205bf2942c397ef4385e3ad1"
+version = "1.2.4"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
 dependencies = [
  "tokio",
 ]
@@ -1526,11 +1528,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.19"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09a43598840e33d5b0331f38c5e30d13bb11c11210a4b58f0d9b18a5a5eefcd9"
+checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
 dependencies = [
- "thiserror-impl 2.0.19",
+ "thiserror-impl 2.0.20",
 ]
 
 [[package]]
@@ -1546,9 +1548,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.19"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43cbfe0cf76104d42a574802844187e84a305e531ed54455f11fbde0f10541cd"
+checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1557,9 +1559,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.53.0"
+version = "1.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d988bcd52dbe076d3d46903332f58c912b87a2c49b1428419a5845154762ffee"
+checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
 dependencies = [
  "bytes",
  "libc",
