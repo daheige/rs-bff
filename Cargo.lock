@@ -504,8 +504,8 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hello-pb"
-version = "0.1.7"
-source = "git+https://github.com/daheige/hello-pb?tag=v1.1.1#5f5187da19a01b4a7ecb9c8c646bb515b3dc2e44"
+version = "0.1.9"
+source = "git+https://github.com/daheige/hello-pb?tag=v1.1.2#b12f17abf9949eecee426a54b68a0319a2de9186"
 dependencies = [
  "async-trait",
  "prost",
@@ -769,14 +769,14 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.33"
+version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "logger"
-version = "1.2.4"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
+version = "1.2.6"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
 dependencies = [
  "chrono",
  "env_logger",
@@ -857,8 +857,8 @@ dependencies = [
 
 [[package]]
 name = "monitor"
-version = "1.2.4"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
+version = "1.2.6"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
 dependencies = [
  "autometrics",
  "axum",
@@ -1275,7 +1275,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "rs-bff"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "autometrics",
@@ -1421,8 +1421,8 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "shutdown"
-version = "1.2.4"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.4#5afe60af1fc061bfd2fcd283492d43e6c9f1a4a0"
+version = "1.2.6"
+source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
 dependencies = [
  "tokio",
 ]

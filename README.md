@@ -101,7 +101,7 @@ services:
 本项目已接入 [hello-pb](https://github.com/daheige/hello-pb) 作为外部协议依赖：
 
 ```toml
-hello-pb = { git = "https://github.com/daheige/hello-pb", tag = "v1.1.1" }
+hello-pb = { git = "https://github.com/daheige/hello-pb", tag = "v1.1.2" }
 ```
 
 ## 五、gRPC 客户端
@@ -230,7 +230,7 @@ cargo run
 7. **AppState 下沉**：从 `providers` 层上提到 `infra/config/app.rs`，避免循环依赖，分层更纯粹。
 8. **gRPC 懒加载**：从启动时全量连接演进为 `OnceCell` 按需初始化，降低启动耗时与无效连接。
 
-## 组件库
+## 相关组件库
 
 - [axum](https://crates.io/crates/axum)
 - [rs-api](https://github.com/daheige/rs-api)
