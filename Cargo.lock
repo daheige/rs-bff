@@ -775,8 +775,8 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "logger"
-version = "1.2.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
+version = "1.3.0"
+source = "git+https://github.com/rs-god/hera?tag=v1.3.0#4b0b07ffa81d21cff5f3b17f0ee47ef6d7f9e46b"
 dependencies = [
  "chrono",
  "env_logger",
@@ -818,7 +818,7 @@ dependencies = [
  "metrics",
  "metrics-util",
  "quanta",
- "thiserror 2.0.20",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -857,8 +857,8 @@ dependencies = [
 
 [[package]]
 name = "monitor"
-version = "1.2.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
+version = "1.3.0"
+source = "git+https://github.com/rs-god/hera?tag=v1.3.0#4b0b07ffa81d21cff5f3b17f0ee47ef6d7f9e46b"
 dependencies = [
  "autometrics",
  "axum",
@@ -907,7 +907,7 @@ dependencies = [
  "futures-sink",
  "js-sys",
  "pin-project-lite",
- "thiserror 2.0.20",
+ "thiserror 2.0.21",
  "tracing",
 ]
 
@@ -921,7 +921,7 @@ dependencies = [
  "futures-executor",
  "futures-util",
  "opentelemetry",
- "thiserror 2.0.20",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1044,7 +1044,7 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot",
- "thiserror 2.0.20",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1275,7 +1275,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "rs-bff"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "autometrics",
@@ -1290,7 +1290,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "shutdown",
- "thiserror 2.0.20",
+ "thiserror 2.0.21",
  "tokio",
  "tonic",
  "tonic-prost",
@@ -1366,9 +1366,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.151"
+version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
+checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
  "itoa",
  "memchr",
@@ -1421,8 +1421,8 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "shutdown"
-version = "1.2.6"
-source = "git+https://github.com/rs-god/hera?tag=v1.2.6#1b5d7068b9a6df11c51c3d789bc0b56342a979b8"
+version = "1.3.0"
+source = "git+https://github.com/rs-god/hera?tag=v1.3.0#4b0b07ffa81d21cff5f3b17f0ee47ef6d7f9e46b"
 dependencies = [
  "tokio",
 ]
@@ -1528,11 +1528,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.20"
+version = "2.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
+checksum = "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e"
 dependencies = [
- "thiserror-impl 2.0.20",
+ "thiserror-impl 2.0.21",
 ]
 
 [[package]]
@@ -1548,9 +1548,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.20"
+version = "2.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
+checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1559,9 +1559,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.53.1"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "bytes",
  "libc",
